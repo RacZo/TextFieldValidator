@@ -170,13 +170,23 @@
 - (id)initWithFrame:(CGRect)frame{
     self = [super initWithFrame:frame];
     if (self) {
-        
+        [self setup];    
     }
     return self;
 }
 
 -(id)initWithCoder:(NSCoder *)aDecoder{
     self=[super initWithCoder:aDecoder];
+    [self setup];
+    return self;
+}
+
+-(void)setDelegate:(id<UITextFieldDelegate>)deleg{
+    supportObj.delegate=deleg;
+    super.delegate=supportObj;
+}
+
+-(void)setup{
     arrRegx=[[NSMutableArray alloc] init];
     validateOnCharacterChanged=YES;
     isMandatory=YES;
@@ -188,12 +198,6 @@
     supportObj.validateOnResign=validateOnResign;
     NSNotificationCenter *notify=[NSNotificationCenter defaultCenter];
     [notify addObserver:self selector:@selector(didHideKeyboard) name:UIKeyboardWillHideNotification object:nil];
-    return self;
-}
-
--(void)setDelegate:(id<UITextFieldDelegate>)deleg{
-    supportObj.delegate=deleg;
-    super.delegate=supportObj;
 }
 
 -(void)setValidateOnCharacterChanged:(BOOL)validate{
@@ -233,6 +237,28 @@
         if([dic objectForKey:@"confirm"]){
             TextFieldValidator *txtConfirm=[dic objectForKey:@"confirm"];
             if(![txtConfirm.text isEqualToString:self.text]){
+                [self showErrorIconForMsg:[dic objectForKey:@"msg"]];
+                return NO;
+            }
+        }else if([dic objectForKey:@"minimumAge"]){
+            NSNumber *minimumAge = [dic objectForKey:@"minimumAge"];
+            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+            [formatter setDateFormat:@"MM/dd/yyyy"];
+            NSDate *today = [NSDate date];
+            NSDate *birthDate = [formatter dateFromString:self.text];
+            if(birthDate == nil){
+                birthDate = today;
+            }
+            NSLog(@"Birth date entered: %@", birthDate);
+            NSDateComponents *ageComponents = [[NSCalendar currentCalendar]
+                                               components:NSCalendarUnitYear
+                                               fromDate:birthDate
+                                               toDate:today
+                                               options:0];
+            NSInteger age = [ageComponents year];
+            NSLog(@"Calculated age: %i", (int)age);
+            if ((int)age < [minimumAge intValue]){
+                NSLog(@"Calculated age (%i) lower than minimum age (%i)", (int)age, [minimumAge intValue]);
                 [self showErrorIconForMsg:[dic objectForKey:@"msg"]];
                 return NO;
             }
@@ -287,6 +313,11 @@
     [popUp.superview addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[popUp]-0-|" options:NSLayoutFormatDirectionLeadingToTrailing  metrics:nil views:dict]];
     [popUp.superview addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[popUp]-0-|" options:NSLayoutFormatDirectionLeadingToTrailing  metrics:nil views:dict]];
     supportObj.popUp=popUp;
+}
+
+-(void)addMinimumAgeValidation:(NSNumber*)minimumAge withMsg:(NSString *)msg {
+    NSDictionary *dic=[[NSDictionary alloc] initWithObjectsAndKeys:minimumAge, @"minimumAge", msg, @"msg", nil];
+    [arrRegx addObject:dic];
 }
 
 @end

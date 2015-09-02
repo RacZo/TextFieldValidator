@@ -96,4 +96,10 @@ NS_CLASS_AVAILABLE_IOS(6_0) @interface TextFieldValidator : UITextField<UITextFi
  */
 -(void)dismissPopup;
 
+
+/**
+ Adds the ability to validate if a date (with format MM/dd/yyyy) is greater than a min value
+ */
+-(void)addMinimumAgeValidation:(NSNumber*)minimumAge withMsg:(NSString*)msg;
+
 @end
